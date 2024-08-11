@@ -10,7 +10,7 @@ class RadarAccessory : public Service::OccupancySensor {
     ld2410 *radar;  // Pointer to the radar object
     int outPin;
     uint32_t lastCheckTime = 0;
-    const uint32_t checkInterval = 5000;  // 5 seconds
+    const uint32_t checkInterval = 2000;  // 5 seconds
     int minRange;  // Minimum detection range in cm
     int maxRange;  // Maximum detection range in cm
 

@@ -41,7 +41,8 @@ void setup() {
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 2");
-    new RadarAccessory(&radar, 4, 200, 900);  // Pass radar object, outPin, and detection range
+    new RadarAccessory(&radar, 4, 200, 900);  // Pass radar object, outPin, and detection range  ?>,mnbvcxzXcsdvfbg 
+    "|"fghrtyedwsqa S1E23=-
 }
 
 void loop() {
