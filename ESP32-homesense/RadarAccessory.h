@@ -10,7 +10,7 @@ class RadarAccessory : public Service::OccupancySensor {
     ld2410 *radar;  // Pointer to the radar object
     int outPin;
     uint32_t lastCheckTime = 0;
-    const uint32_t checkInterval = 2000;  // 5 seconds
+    const uint32_t checkInterval = 2000;  // 2 seconds
     int minRange;  // Minimum detection range in cm
     int maxRange;  // Maximum detection range in cm
 
@@ -33,34 +33,6 @@ class RadarAccessory : public Service::OccupancySensor {
 
         // Update the occupancy characteristic for HomeSpan
         occupancy->setVal(presence ? 1 : 0);
-
-        Serial.println("Radar Data Report:");
-
-        if (radar->presenceDetected()) {
-          Serial.println("Presence detected!");
-
-          if (radar->stationaryTargetDetected()) {
-            Serial.print("Stationary target detected at ");
-            Serial.print(radar->stationaryTargetDistance());
-            Serial.print(" cm, energy level: ");
-            Serial.println(radar->stationaryTargetEnergy());
-          } else {
-            Serial.println("No stationary target detected.");
-          }
-
-          if (radar->movingTargetDetected()) {
-            Serial.print("Moving target detected at ");
-            Serial.print(radar->movingTargetDistance());
-            Serial.print(" cm, energy level: ");
-            Serial.println(radar->movingTargetEnergy());
-          } else {
-            Serial.println("No moving target detected.");
-          }
-        } else {
-          Serial.println("No presence detected.");
-        }
-
-        Serial.println("-----------------------------");
       }
     }
 };
