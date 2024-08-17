@@ -1,8 +1,11 @@
 #include "HomeSpan.h"
-#include "RadarAccessory.h"  // Include the accessory class
-#include "VirtualSwitch.h" //Include the Virtual Switch class  
 #include <HardwareSerial.h>
 #include <ld2410.h>  // Include the ld2410 header file
+#include <WebServer.h>
+
+#include "RadarAccessory.h"  // Include the accessory class
+#include "VirtualSwitch.h" //Include the Virtual Switch class  
+
 
 HardwareSerial radarSerial(1);  // Define radarSerial as Serial1
 ld2410 radar;  // Define radar object
@@ -10,6 +13,7 @@ ld2410 radar;  // Define radar object
 unsigned long previousMillis = 0; 
 const long interval = 5000;  // Interval for 5 seconds
 
+String sensorData = "No data available";
 
 // Define variables for radarSerial setup
 const int baudRate = 256000;
@@ -26,6 +30,11 @@ void setup() {
   homeSpan.begin(Category::Bridges, "HomeSense");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
+
+  // Initialize web server
+  server.on("/sensor", handleSensorData);  // Only handle /sensor route
+  server.begin();
+  Serial.println("Web server started on port 8080");
 
   // Initialize the radar serial communication
   radarSerial.begin(baudRate, dataBits, rxPin, txPin);
@@ -63,6 +72,8 @@ void loop() {
   homeSpan.poll();  // HomeSpan processing
   radar.read();  // Read radar data in the main loop
 
+  server.handleClient();  // Handle web server requests
+
   unsigned long currentMillis = millis();
 
   // Check if 5 seconds have passed
@@ -94,7 +105,11 @@ void loop() {
     } else {
       Serial.println("No presence detected.");
     }
-
+    sensorData = "Radar Data Report:\n\nMoving Target:\n" + movingTargetData + "\n\nStationary Target:\n" + stationaryTargetData;
     Serial.println("-----------------------------");
   }
+}
+
+void handleSensorData() {
+  server.send(200, "text/plain", sensorData);  // Serve the sensor data
 }
