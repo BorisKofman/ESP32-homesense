@@ -1,6 +1,6 @@
 #include "HomeSpan.h"
 #include "RadarAccessory.h"  // Include the accessory class
-
+#include "VirtualSwitch.h" //Include the Virtual Switch class  
 #include <HardwareSerial.h>
 #include <ld2410.h>  // Include the ld2410 header file
 
@@ -23,7 +23,7 @@ void setup() {
   Serial.begin(115200);
 
   // Initialize HomeSpan
-  homeSpan.begin(Category::Bridges, "HomeSpan Radar & BLE Bridge");
+  homeSpan.begin(Category::Bridges, "HomeSense");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
 
@@ -43,18 +43,20 @@ void setup() {
     return;  // Stop if initialization fails
   }
 
-  // Initialize HomeSpan accessories
+  // Add a reader senor
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
     new RadarAccessory(&radar, out, 0, 1300);  // Pass radar object, outPin, and detection range
 
-//   new SpanAccessory();                                                          
-//     new Service::AccessoryInformation();
-//       new Characteristic::Identify(); 
-//       new Characteristic::Name("Radar Sensor 2");
-//     new RadarAccessory(&radar, out, 200, 900);  // Pass radar object, outPin, and detection range 
+  // Add a virtual switch
+  new SpanAccessory();
+    new Service::AccessoryInformation();
+      new Characteristic::Identify(); 
+      new Characteristic::Name("Virtual Switch 1");
+    new VirtualSwitch();  // Create a virtual switch that will print to Serial
+}
 }
 
 void loop() {
