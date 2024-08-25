@@ -8,7 +8,7 @@ class VirtualSwitch : public Service::Switch {
     SpanCharacteristic *power;  // Define a characteristic to hold the switch state
 
     VirtualSwitch() : Service::Switch() {
-      power = new Characteristic::On(0);  // Initialize the switch state to OFF (0)
+      power = new Characteristic::On(0, true);  // Initialize the switch state to OFF (0)
     }
 
     // This method is called whenever the switch state changes

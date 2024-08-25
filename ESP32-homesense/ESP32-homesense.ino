@@ -1,19 +1,17 @@
 #include "HomeSpan.h"
 #include <HardwareSerial.h>
 #include <ld2410.h>  // Include the ld2410 header file
-#include <WebServer.h>
 
 #include "RadarAccessory.h"  // Include the accessory class
-#include "VirtualSwitch.h" //Include the Virtual Switch class  
+#include "VirtualSwitch.h"   // Include the Virtual Switch class  
 
+#define STATUS_LED_PIN 48  // pin for status LED
 
 HardwareSerial radarSerial(1);  // Define radarSerial as Serial1
 ld2410 radar;  // Define radar object
 
 unsigned long previousMillis = 0; 
 const long interval = 5000;  // Interval for 5 seconds
-
-String sensorData = "No data available";
 
 // Define variables for radarSerial setup
 const int baudRate = 256000;
@@ -22,19 +20,15 @@ const int rxPin = 44;
 const int txPin = 43;
 const int out = 4;
 
-
 void setup() {
   Serial.begin(115200);
 
   // Initialize HomeSpan
+  homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
   homeSpan.begin(Category::Bridges, "HomeSense");
+  homeSpan.enableWebLog(10, "pool.ntp.org", "UTC+3");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
-
-  // Initialize web server
-  server.on("/sensor", handleSensorData);  // Only handle /sensor route
-  server.begin();
-  Serial.println("Web server started on port 8080");
 
   // Initialize the radar serial communication
   radarSerial.begin(baudRate, dataBits, rxPin, txPin);
@@ -52,7 +46,7 @@ void setup() {
     return;  // Stop if initialization fails
   }
 
-  // Add a reader senor
+  // Add a radar sensor
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
@@ -66,14 +60,11 @@ void setup() {
       new Characteristic::Name("Virtual Switch 1");
     new VirtualSwitch();  // Create a virtual switch that will print to Serial
 }
-}
 
 void loop() {
   homeSpan.poll();  // HomeSpan processing
   radar.read();  // Read radar data in the main loop
-
-  server.handleClient();  // Handle web server requests
-
+  
   unsigned long currentMillis = millis();
 
   // Check if 5 seconds have passed
@@ -105,11 +96,6 @@ void loop() {
     } else {
       Serial.println("No presence detected.");
     }
-    sensorData = "Radar Data Report:\n\nMoving Target:\n" + movingTargetData + "\n\nStationary Target:\n" + stationaryTargetData;
     Serial.println("-----------------------------");
   }
-}
-
-void handleSensorData() {
-  server.send(200, "text/plain", sensorData);  // Serve the sensor data
 }

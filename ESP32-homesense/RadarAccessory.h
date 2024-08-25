@@ -19,22 +19,29 @@ class RadarAccessory : public Service::OccupancySensor {
       : Service::OccupancySensor(),
         radar(radarSensor), 
         outPin(pin), minRange(minRange), maxRange(maxRange) {
-      occupancy = new Characteristic::OccupancyDetected(0);
+      occupancy = new Characteristic::OccupancyDetected(0, true);
     }
 
-    void loop() {
-      uint32_t currentTime = millis();
-      if (currentTime - lastCheckTime >= checkInterval) {
-        lastCheckTime = currentTime;        
-        // Check for presence detection based on combined range for stationary and moving targets
-        bool presence = digitalRead(outPin) == HIGH || 
-                        (radar->stationaryTargetDetected() && radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
-                        (radar->movingTargetDetected() && radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange);
+  void loop() {
+    uint32_t currentTime = millis();
+    if (currentTime - lastCheckTime >= checkInterval) {
+        lastCheckTime = currentTime;
+
+        bool presence = false;
+
+        // Check if presence is detected
+        if (radar->presenceDetected()) {
+            // Check if either target is within the specified range
+            if ((radar->stationaryTargetDistance() >= minRange || radar->stationaryTargetDistance() <= maxRange) || 
+                (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
+                presence = true;
+            }
+        }
 
         // Update the occupancy characteristic for HomeSpan
-        occupancy->setVal(presence ? 1 : 0);
-      }
+        occupancy->setVal(presence);
     }
+  }
 };
 
 #endif // RADAR_ACCESSORY_H
