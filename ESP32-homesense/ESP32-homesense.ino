@@ -1,6 +1,17 @@
 #include "HomeSpan.h"
 #include <HardwareSerial.h>
+
+#define  USE_LD2450
+
+#ifdef USE_LD2410
 #include <ld2410.h>  // Include the ld2410 header file
+typedef ld2410 RadarType; // Define RadarType as ld2410
+#endif
+
+#ifdef USE_LD2450
+#include "LD2450.h" // Include the LD2450 header file
+typedef LD2450 RadarType; // Define RadarType as LD2450
+#endif
 
 #include "RadarAccessory.h"  // Include the accessory class
 #include "VirtualSwitch.h"   // Include the Virtual Switch class  
@@ -8,7 +19,7 @@
 #define STATUS_LED_PIN 48  // pin for status LED
 
 HardwareSerial radarSerial(1);  // Define radarSerial as Serial1
-ld2410 radar;  // Define radar object
+RadarType radar;  // Define radar object
 
 unsigned long previousMillis = 0; 
 const long interval = 5000;  // Interval for 5 seconds
@@ -33,6 +44,8 @@ void setup() {
   // Initialize the radar serial communication
   radarSerial.begin(baudRate, dataBits, rxPin, txPin);
   delay(500);
+
+  #ifdef USE_LD2410
   if (radar.begin(radarSerial)) {
     Serial.println("LD2410 radar sensor initialized successfully.");
     Serial.print("LD2410 firmware version: ");
@@ -45,6 +58,16 @@ void setup() {
     Serial.println("Failed to initialize LD2410 radar sensor.");
     return;  // Stop if initialization fails
   }
+  #endif
+
+  #ifdef USE_LD2450
+  if (radar.begin(radarSerial)) {
+    Serial.println("LD2450 radar sensor initialized successfully.");
+  } else {
+    Serial.println("Failed to initialize LD2450 radar sensor.");
+    return;  // Stop if initialization fails
+  }
+  #endif
 
   // Add a radar sensor
   new SpanAccessory();                                                          
@@ -73,6 +96,7 @@ void loop() {
 
     Serial.println("Radar Data Report:");
 
+    #ifdef USE_LD2410
     if (radar.presenceDetected()) {
       Serial.println("Presence detected!");
 
@@ -96,6 +120,28 @@ void loop() {
     } else {
       Serial.println("No presence detected.");
     }
-    Serial.println("-----------------------------");
-  }
+    #endif
+
+    #ifdef USE_LD2450
+        Serial.print("Target count: ");
+        Serial.println(radar.getSensorSupportedTargetCount());
+
+        for (int i = 0; i < radar.getSensorSupportedTargetCount(); ++i) {
+            auto target = radar.getTarget(i);
+            if (target.valid) {
+                Serial.print("Target ID: ");
+                Serial.print(target.id);
+                Serial.print(", Distance: ");
+                Serial.print(target.distance);
+                Serial.print(" cm, Speed: ");
+                Serial.println(target.speed);
+            } else {
+                Serial.print("No valid target at index ");
+                Serial.println(i);
+            }
+        }
+        #endif
+
+        Serial.println("-----------------------------");
+    }
 }
