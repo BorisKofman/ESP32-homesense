@@ -1,7 +1,7 @@
 #include "HomeSpan.h"
 #include <HardwareSerial.h>
 
-#define USE_LD2450
+#define USE_LD2450 //Replace with Desired human presence sensor currently supported 2450,2410 
 
 #ifdef USE_LD2410
 #include <ld2410.h>  
@@ -47,12 +47,6 @@ void setup() {
   radar.begin(radarSerial);
   if (radar.isInitialized()) {
     Serial.println("LD2410 radar sensor initialized successfully.");
-    Serial.print("LD2410 firmware version: ");
-    Serial.print(radar.firmware_major_version);
-    Serial.print('.');
-    Serial.print(radar.firmware_minor_version);
-    Serial.print('.');
-    Serial.println(radar.firmware_bugfix_version, HEX);
   } else {
     Serial.println("Failed to initialize LD2410 radar sensor.");
     return; 
