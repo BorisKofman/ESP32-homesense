@@ -1,39 +1,51 @@
 #include "HomeSpan.h"
 #include <HardwareSerial.h>
-#include <ld2410.h>  // Include the ld2410 header file
 
-#include "RadarAccessory.h"  // Include the accessory class
-#include "VirtualSwitch.h"   // Include the Virtual Switch class  
+#define USE_LD2450
 
-#define STATUS_LED_PIN 48  // pin for status LED
+#ifdef USE_LD2410
+#include <ld2410.h>  
+typedef ld2410 RadarType;
+#endif
 
-HardwareSerial radarSerial(1);  // Define radarSerial as Serial1
-ld2410 radar;  // Define radar object
+#ifdef USE_LD2450
+#include "LD2450.h" 
+typedef LD2450 RadarType; 
+#endif
+
+#include "RadarAccessory.h" 
+#include "VirtualSwitch.h"
+
+#define STATUS_LED_PIN 48  // Pin for status LED
+
+HardwareSerial radarSerial(1); 
+RadarType radar; 
 
 unsigned long previousMillis = 0; 
-const long interval = 5000;  // Interval for 5 seconds
+const long interval = 5000;  // Interval for 5 seconds  only for printing 
 
 // Define variables for radarSerial setup
 const int baudRate = 256000;
 const int dataBits = SERIAL_8N1;
+
 const int rxPin = 44;
 const int txPin = 43;
-const int out = 4;
 
 void setup() {
   Serial.begin(115200);
 
-  // Initialize HomeSpan
   homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
   homeSpan.begin(Category::Bridges, "HomeSense");
   homeSpan.enableWebLog(10, "pool.ntp.org", "UTC+3");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
 
-  // Initialize the radar serial communication
   radarSerial.begin(baudRate, dataBits, rxPin, txPin);
   delay(500);
-  if (radar.begin(radarSerial)) {
+
+  #ifdef USE_LD2410
+  radar.begin(radarSerial);
+  if (radar.isInitialized()) {
     Serial.println("LD2410 radar sensor initialized successfully.");
     Serial.print("LD2410 firmware version: ");
     Serial.print(radar.firmware_major_version);
@@ -43,27 +55,40 @@ void setup() {
     Serial.println(radar.firmware_bugfix_version, HEX);
   } else {
     Serial.println("Failed to initialize LD2410 radar sensor.");
-    return;  // Stop if initialization fails
+    return; 
   }
+  #endif
 
-  // Add a radar sensor
+  #ifdef USE_LD2450
+  radar.begin(radarSerial);
+  Serial.println("LD2450 radar sensor initialized successfully.");
+  #endif
+
+  // Example Add a radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
-    new RadarAccessory(&radar, out, 0, 1300);  // Pass radar object, outPin, and detection range
+    new RadarAccessory(&radar, 0, 350); 
 
-  // Add a virtual switch
+  // Example Add a radar sensor 2 
+  new SpanAccessory();                                                          
+    new Service::AccessoryInformation();
+      new Characteristic::Identify(); 
+      new Characteristic::Name("Radar Sensor 2");
+    new RadarAccessory(&radar, 350, 800); 
+
+  // Example Add a virtual switch
   new SpanAccessory();
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Virtual Switch 1");
-    new VirtualSwitch();  // Create a virtual switch that will print to Serial
+    new VirtualSwitch();  
 }
 
 void loop() {
-  homeSpan.poll();  // HomeSpan processing
-  radar.read();  // Read radar data in the main loop
+  homeSpan.poll();
+  radar.read();  
   
   unsigned long currentMillis = millis();
 
@@ -73,6 +98,7 @@ void loop() {
 
     Serial.println("Radar Data Report:");
 
+    #ifdef USE_LD2410
     if (radar.presenceDetected()) {
       Serial.println("Presence detected!");
 
@@ -96,6 +122,30 @@ void loop() {
     } else {
       Serial.println("No presence detected.");
     }
+    #endif
+
+    #ifdef USE_LD2450
+    bool presenceDetected = false;
+
+    // Iterate through all detected targets
+    for (int i = 0; i < radar.getSensorSupportedTargetCount(); ++i) {
+      auto target = radar.getTarget(i);
+      if (target.valid) {
+        presenceDetected = true;
+
+        Serial.print("Detected Target ID: ");
+        Serial.print(target.id);
+        Serial.print(", Distance: ");
+        Serial.print(target.distance);
+        Serial.print(" cm, Speed: ");
+        Serial.println(target.speed);
+      }
+    }
+
+    if (!presenceDetected) {
+      Serial.println("No presence detected.");
+    }
+    #endif
     Serial.println("-----------------------------");
   }
 }
