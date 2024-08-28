@@ -1,54 +1,59 @@
-#ifndef LD2450_H
-#define LD2450_H
+#ifndef LD2450_h
+#define LD2450_h
 
-#include <Arduino.h>  // This includes basic Arduino types like uint16_t
-#include <HardwareSerial.h>  // This includes the HardwareSerial class
+#include <Arduino.h>
 
-class LD2450 {
+#ifdef SoftwareSerial_h
+#define ENABLE_SOFTWARESERIAL_SUPPORT
+#endif
+
+#ifdef ENABLE_SOFTWARESERIAL_SUPPORT
+#include <SoftwareSerial.h>
+#endif
+
+#define LD2450_MAX_SENSOR_TARGETS 3
+#define LD2450_SERIAL_BUFFER 256
+#define LD2450_SERIAL_SPEED 256000
+
+class LD2450
+{
 public:
-    // Constructor and Destructor
+    typedef struct RadarTarget
+    {
+        uint16_t id;         // ID
+        int16_t x;           // X mm
+        int16_t y;           // Y mm
+        int16_t speed;       // cm/s
+        uint16_t resolution; // mm
+        uint16_t distance;   // cm calculated from x and y
+        bool valid;
+    } RadarTarget;
+
     LD2450();
     ~LD2450();
 
-    // Initialization methods
-    bool begin(HardwareSerial &serial);
-    bool begin(Stream &radarStream);
-    #ifdef ENABLE_SOFTWARESERIAL_SUPPORT
-    bool begin(SoftwareSerial &radarStream, bool already_initialized);
-    #endif
+    void begin(Stream &radarStream);
+    void begin(HardwareSerial &radarStream, bool already_initialized = false);
+    bool presenceDetected(); 
 
-    // Radar functions
+#ifdef ENABLE_SOFTWARESERIAL_SUPPORT
+    void begin(SoftwareSerial &radarStream, bool already_initialized = false);
+#endif
+
     void setNumberOfTargets(uint16_t _numTargets);
+    uint8_t ProcessSerialDataIntoRadarData(byte rec_buf[], int len);
+    RadarTarget getTarget(uint16_t _target_id);
+    uint16_t getSensorSupportedTargetCount();
     String getLastTargetMessage();
     uint8_t read();
-    uint16_t getSensorSupportedTargetCount();
-    struct RadarTarget {
-        bool valid;
-        int id;
-        int distance;
-        int speed;
-        int16_t x;           // X-coordinate
-        int16_t y;           // Y-coordinate
-        uint16_t resolution; // Resolution
-    };
-    RadarTarget getTarget(uint16_t index);
 
-    // Radar detection functions
-    bool presenceDetected();
-    bool stationaryTargetDetected();
-    bool movingTargetDetected();
-    int stationaryTargetDistance();
-    int movingTargetDistance();
-    int movingTargetEnergy();
+protected:
 
 private:
-    HardwareSerial *radarSerial;
-    RadarTarget radarTargets[3];
-    uint16_t numTargets = 3;
-    String last_target_data;
-
-    void parseData(byte rec_buf[], int len);
-    uint8_t ProcessSerialDataIntoRadarData(byte rec_buf[], int len);
+    Stream *radar_uart = nullptr;
+    RadarTarget radarTargets[LD2450_MAX_SENSOR_TARGETS];
+    uint16_t numTargets = LD2450_MAX_SENSOR_TARGETS;
+    String last_target_data = "";
 };
 
-#endif // LD2450_H
+#endif

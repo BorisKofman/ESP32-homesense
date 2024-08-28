@@ -1,52 +1,51 @@
 #include "HomeSpan.h"
 #include <HardwareSerial.h>
 
-#define  USE_LD2450
+#define USE_LD2450
 
 #ifdef USE_LD2410
-#include <ld2410.h>  // Include the ld2410 header file
-typedef ld2410 RadarType; // Define RadarType as ld2410
+#include <ld2410.h>  
+typedef ld2410 RadarType;
 #endif
 
 #ifdef USE_LD2450
-#include "LD2450.h" // Include the LD2450 header file
-typedef LD2450 RadarType; // Define RadarType as LD2450
+#include "LD2450.h" 
+typedef LD2450 RadarType; 
 #endif
 
-#include "RadarAccessory.h"  // Include the accessory class
-#include "VirtualSwitch.h"   // Include the Virtual Switch class  
+#include "RadarAccessory.h" 
+#include "VirtualSwitch.h"
 
-#define STATUS_LED_PIN 48  // pin for status LED
+#define STATUS_LED_PIN 48  // Pin for status LED
 
-HardwareSerial radarSerial(1);  // Define radarSerial as Serial1
-RadarType radar;  // Define radar object
+HardwareSerial radarSerial(1); 
+RadarType radar; 
 
 unsigned long previousMillis = 0; 
-const long interval = 5000;  // Interval for 5 seconds
+const long interval = 5000;  // Interval for 5 seconds  only for printing 
 
 // Define variables for radarSerial setup
 const int baudRate = 256000;
 const int dataBits = SERIAL_8N1;
+
 const int rxPin = 44;
 const int txPin = 43;
-const int out = 4;
 
 void setup() {
   Serial.begin(115200);
 
-  // Initialize HomeSpan
   homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
   homeSpan.begin(Category::Bridges, "HomeSense");
   homeSpan.enableWebLog(10, "pool.ntp.org", "UTC+3");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
 
-  // Initialize the radar serial communication
   radarSerial.begin(baudRate, dataBits, rxPin, txPin);
   delay(500);
 
   #ifdef USE_LD2410
-  if (radar.begin(radarSerial)) {
+  radar.begin(radarSerial);
+  if (radar.isInitialized()) {
     Serial.println("LD2410 radar sensor initialized successfully.");
     Serial.print("LD2410 firmware version: ");
     Serial.print(radar.firmware_major_version);
@@ -56,37 +55,40 @@ void setup() {
     Serial.println(radar.firmware_bugfix_version, HEX);
   } else {
     Serial.println("Failed to initialize LD2410 radar sensor.");
-    return;  // Stop if initialization fails
+    return; 
   }
   #endif
 
   #ifdef USE_LD2450
-  if (radar.begin(radarSerial)) {
-    Serial.println("LD2450 radar sensor initialized successfully.");
-  } else {
-    Serial.println("Failed to initialize LD2450 radar sensor.");
-    return;  // Stop if initialization fails
-  }
+  radar.begin(radarSerial);
+  Serial.println("LD2450 radar sensor initialized successfully.");
   #endif
 
-  // Add a radar sensor
+  // Example Add a radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
-    new RadarAccessory(&radar, out, 0, 1300);  // Pass radar object, outPin, and detection range
+    new RadarAccessory(&radar, 0, 350); 
 
-  // Add a virtual switch
+  // Example Add a radar sensor 2 
+  new SpanAccessory();                                                          
+    new Service::AccessoryInformation();
+      new Characteristic::Identify(); 
+      new Characteristic::Name("Radar Sensor 2");
+    new RadarAccessory(&radar, 350, 800); 
+
+  // Example Add a virtual switch
   new SpanAccessory();
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Virtual Switch 1");
-    new VirtualSwitch();  // Create a virtual switch that will print to Serial
+    new VirtualSwitch();  
 }
 
 void loop() {
-  homeSpan.poll();  // HomeSpan processing
-  radar.read();  // Read radar data in the main loop
+  homeSpan.poll();
+  radar.read();  
   
   unsigned long currentMillis = millis();
 
@@ -123,25 +125,27 @@ void loop() {
     #endif
 
     #ifdef USE_LD2450
-        Serial.print("Target count: ");
-        Serial.println(radar.getSensorSupportedTargetCount());
+    bool presenceDetected = false;
 
-        for (int i = 0; i < radar.getSensorSupportedTargetCount(); ++i) {
-            auto target = radar.getTarget(i);
-            if (target.valid) {
-                Serial.print("Target ID: ");
-                Serial.print(target.id);
-                Serial.print(", Distance: ");
-                Serial.print(target.distance);
-                Serial.print(" cm, Speed: ");
-                Serial.println(target.speed);
-            } else {
-                Serial.print("No valid target at index ");
-                Serial.println(i);
-            }
-        }
-        #endif
+    // Iterate through all detected targets
+    for (int i = 0; i < radar.getSensorSupportedTargetCount(); ++i) {
+      auto target = radar.getTarget(i);
+      if (target.valid) {
+        presenceDetected = true;
 
-        Serial.println("-----------------------------");
+        Serial.print("Detected Target ID: ");
+        Serial.print(target.id);
+        Serial.print(", Distance: ");
+        Serial.print(target.distance);
+        Serial.print(" cm, Speed: ");
+        Serial.println(target.speed);
+      }
     }
+
+    if (!presenceDetected) {
+      Serial.println("No presence detected.");
+    }
+    #endif
+    Serial.println("-----------------------------");
+  }
 }
