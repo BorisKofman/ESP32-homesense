@@ -28,8 +28,8 @@ const long interval = 5000;  // Interval for 5 seconds  only for printing
 const int baudRate = 256000;
 const int dataBits = SERIAL_8N1;
 
-const int rxPin = 44;
-const int txPin = 43;
+const int rxPin = 43;
+const int txPin = 44;
 
 void setup() {
   Serial.begin(115200);
@@ -69,14 +69,14 @@ void setup() {
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
-    new RadarAccessory(&radar, 0, 350); 
+    new RadarAccessory(&radar, 0, 250); 
 
   // Example Add a radar sensor 2 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 2");
-    new RadarAccessory(&radar, 350, 800); 
+    new RadarAccessory(&radar, 250, 800); 
 
   // Example Add a virtual switch
   new SpanAccessory();
