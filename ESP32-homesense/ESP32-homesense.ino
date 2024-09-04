@@ -35,7 +35,7 @@ void setup() {
   Serial.begin(115200);
 
   homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
-  homeSpan.begin(Category::Bridges, "HomeSense");
+  homeSpan.begin(Category::Bridges, "HomeSense Bridge");
   homeSpan.enableWebLog(10, "pool.ntp.org", "UTC+3");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
@@ -64,6 +64,10 @@ void setup() {
   Serial.println("LD2450 radar sensor initialized successfully.");
   #endif
 
+    new SpanAccessory();
+    new Service::AccessoryInformation();
+    new Characteristic::Identify();            
+
   // Example Add a radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
@@ -78,12 +82,12 @@ void setup() {
       new Characteristic::Name("Radar Sensor 2");
     new RadarAccessory(&radar, 250, 800); 
 
-  // Example Add a virtual switch
-  new SpanAccessory();
-    new Service::AccessoryInformation();
-      new Characteristic::Identify(); 
-      new Characteristic::Name("Virtual Switch 1");
-    new VirtualSwitch();  
+  // // Example Add a virtual switch
+  // new SpanAccessory();
+  //   new Service::AccessoryInformation();
+  //     new Characteristic::Identify(); 
+  //     new Characteristic::Name("Virtual Switch 1");
+  //   new VirtualSwitch();  
 }
 
 void loop() {
