@@ -19,8 +19,6 @@ class RadarAccessory : public Service::OccupancySensor {
     ld2410 *radar;
     #endif
 
-    uint32_t lastCheckTime = 0;
-    const uint32_t checkInterval = 2000;  // 2 seconds
     int minRange;
     int maxRange;
 
@@ -43,12 +41,7 @@ class RadarAccessory : public Service::OccupancySensor {
     }
 
     void loop() {
-      uint32_t currentTime = millis();
-      if (currentTime - lastCheckTime >= checkInterval) {
-          lastCheckTime = currentTime;
-
           bool presence = false;
-
           #ifdef USE_LD2450
           if (radar->read() > 0) {
               bool anyTargetsDetected = false;
