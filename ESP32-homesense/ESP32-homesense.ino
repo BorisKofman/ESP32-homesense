@@ -1,7 +1,8 @@
 #include "HomeSpan.h"
+#include "config.h"
 #include <HardwareSerial.h>
-
-#define USE_LD2450 //Replace with Desired human presence sensor currently supported 2450,2410 
+#include "RadarAccessory.h" 
+#include "VirtualSwitch.h"
 
 #ifdef USE_LD2410
 #include <ld2410.h>  
@@ -10,13 +11,13 @@ typedef ld2410 RadarType;
 
 #ifdef USE_LD2450
 #include "LD2450.h" 
-typedef LD2450 RadarType; 
+typedef LD2450 RadarType;
 #endif
 
-#include "RadarAccessory.h" 
-#include "VirtualSwitch.h"
-
-#define STATUS_LED_PIN 48  // Pin for status LED
+#ifdef USE_LD2412
+#include "ld2412.h"  
+typedef LD2412 RadarType;
+#endif
 
 HardwareSerial radarSerial(1); 
 RadarType radar; 
@@ -58,6 +59,16 @@ void setup() {
   Serial.println("LD2450 radar sensor initialized successfully.");
   #endif
 
+  #ifdef USE_LD2412
+  radar.begin(radarSerial);
+  if (radar.isInitialized()) {
+    Serial.println("LD2420 radar sensor initialized successfully.");
+  } else {
+    Serial.println("Failed to initialize LD2420 radar sensor.");
+    return; 
+  }
+  #endif
+
   // Example Add a radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
@@ -83,7 +94,7 @@ void setup() {
 void loop() {
   homeSpan.poll();
   radar.read();  
-  
+
   unsigned long currentMillis = millis();
 
   // Check if 5 seconds have passed
@@ -140,6 +151,35 @@ void loop() {
       Serial.println("No presence detected.");
     }
     #endif
+
+    #ifdef USE_LD2412
+    if (radar.presenceDetected()) {
+      Serial.println("Presence detected by LD2412!");
+
+      // Check for stationary targets
+      if (radar.stationaryTargetDetected()) {
+        Serial.print("Stationary target detected by LD2412 at ");
+        Serial.print(radar.stationaryTargetDistance());
+        Serial.print(" cm");
+      } else {
+        Serial.println("No stationary target detected by LD2412.");
+      }
+
+      // Check for moving targets
+      if (radar.movingTargetDetected()) {
+        Serial.print("Moving target detected by LD2412 at ");
+        Serial.print(radar.movingTargetDistance());
+        Serial.print(" cm");
+      } else {
+        Serial.println("No moving target detected by LD2412.");
+      }
+
+    } else {
+      Serial.println("No presence detected by LD2412.");
+    }
+    #endif
+
     Serial.println("-----------------------------");
   }
 }
+   
