@@ -65,6 +65,22 @@ uint16_t LD2412::movingTargetDistance() {
     return movingDistance;
 }
 
+void LD2412::sendCommand(uint8_t commandWord, uint8_t* commandValue, uint8_t valueLen) {
+    _serial.write(0xFD); // Frame header
+    _serial.write(0xFC); 
+    _serial.write(0xFB); 
+    _serial.write(0xFA); 
+    _serial.write(valueLen + 4); // Frame length
+    _serial.write(commandWord);  // Command word
+    for (int i = 0; i < valueLen; i++) {
+        _serial.write(commandValue[i]); // Command values
+    }
+    _serial.write(0x04);  // Frame end
+    _serial.write(0x03); 
+    _serial.write(0x02); 
+    _serial.write(0x01); 
+}
+
 void LD2412::configureSensor() {
     sendEnableConfiguration();
     // Set basic parameters (e.g., distance range, sensitivity)
