@@ -67,8 +67,7 @@ void setup() {
   #endif
 
   #ifdef USE_LD2412
-  radar = RadarType(radarSerial); // Initialize radar with HardwareSerial reference
-  radar.begin(); // LD2412 might require a different method for initialization
+  radar.begin(radarSerial);
   if (radar.isInitialized()) {
     Serial.println("LD2412 radar sensor initialized successfully.");
   } else {
@@ -76,7 +75,6 @@ void setup() {
     return;
   }
   #endif
-
 
   new SpanAccessory();
   new Service::AccessoryInformation();
@@ -109,7 +107,7 @@ void setup() {
 
 void loop() {
   homeSpan.poll();
-  radar.readData();  // Use readData to fetch radar data from LD2412 or LD2410
+  radar.read();  
 
   unsigned long currentMillis = millis();
 

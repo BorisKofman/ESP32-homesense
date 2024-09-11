@@ -3,7 +3,7 @@
 
 LD2412::LD2412(HardwareSerial &serial) : serial(serial) {}
 
-void LD2412::setup() {
+void LD2412::begin() {
   Serial.println("LD2412 sensor initialized...");
 }
 
@@ -11,7 +11,7 @@ void LD2412::configureSensor() {
   Serial.println("LD2412 sensor configuration complete.");
 }
 
-void LD2412::readData() {
+void LD2412::read() {
   static char buffer[bufferSize];  
   int bytesRead = 0;
 
