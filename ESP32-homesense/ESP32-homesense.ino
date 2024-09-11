@@ -4,6 +4,9 @@
 #include "RadarAccessory.h" 
 #include "VirtualSwitch.h"
 
+#include <esp_bt.h>
+#include <esp_bt_main.h>
+
 // Ensure proper radar initialization based on the sensor type
 #ifdef USE_LD2410
 #include <ld2410.h>  
@@ -41,8 +44,12 @@ RadarType radar(radarSerial);
 void setup() {
   Serial.begin(115200);
 
+  // Disable Bluetooth to save power
+  btStop();
+  esp_bt_controller_disable();
 
   homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
+  homeSpan.setStatusAutoOff(5);
   homeSpan.begin(Category::Bridges, "HomeSense");
   homeSpan.enableWebLog(10, "pool.ntp.org", "UTC+3");
   homeSpan.setApTimeout(300);
@@ -67,13 +74,8 @@ void setup() {
   #endif
 
   #ifdef USE_LD2412
-  radar.begin(radarSerial);
-  if (radar.isInitialized()) {
-    Serial.println("LD2412 radar sensor initialized successfully.");
-  } else {
-    Serial.println("Failed to initialize LD2412 radar sensor.");
-    return;
-  }
+  radar.begin();  // No parameter needed
+  Serial.println("LD2412 radar sensor initialized successfully.");
   #endif
 
   new SpanAccessory();
@@ -86,15 +88,15 @@ void setup() {
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
     // Ensure RadarAccessory is defined or replace it with correct type
-    new RadarAccessory(&radar, 0, 350);  // Provide pin
+    new RadarAccessory(&radar, 0, 1100);  // Provide pin
 
-  // Add radar sensor 2 
-  new SpanAccessory();                                                          
-    new Service::AccessoryInformation();
-      new Characteristic::Identify(); 
-      new Characteristic::Name("Radar Sensor 2");
-    // Ensure RadarAccessory is defined or replace it with correct type
-    new RadarAccessory(&radar, 350, 800);  // Provide pin
+  // // Add radar sensor 2 
+  // new SpanAccessory();                                                          
+  //   new Service::AccessoryInformation();
+  //     new Characteristic::Identify(); 
+  //     new Characteristic::Name("Radar Sensor 2");
+  //   // Ensure RadarAccessory is defined or replace it with correct type
+  //   new RadarAccessory(&radar, 350, 800);  // Provide pin
 
   // // Add a virtual switch
   // new SpanAccessory();
