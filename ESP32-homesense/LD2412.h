@@ -1,32 +1,31 @@
 #ifndef LD2412_H
 #define LD2412_H
 
-#include <Arduino.h>
+#include <HardwareSerial.h>
 
 class LD2412 {
-  public:
-    LD2412(HardwareSerial& serial);
-    void begin(int baudRate, int dataBits, int rxPin, int txPin);
-    void sendCommand(uint8_t commandWord, uint8_t* commandValue, uint8_t valueLen);
-    void readData();
-    void configureSensor();
+public:
+  LD2412(HardwareSerial &serial);
+  void setup();
+  void configureSensor();
+  void readData();
 
-    bool presenceDetected();  // New method to detect presence
-    bool stationaryTargetDetected();  // New method to detect stationary target
-    uint16_t stationaryTargetDistance();  // New method to get stationary target distance
-    bool movingTargetDetected();  // New method to detect moving target
-    uint16_t movingTargetDistance();  // New method to get moving target distance
-  
-  private:
-    HardwareSerial& _serial;
-    void sendEnableConfiguration();
-    void sendEndConfiguration();
-    void handleAckResponse();
+  bool presenceDetected();
+  bool stationaryTargetDetected();
+  bool movingTargetDetected();
+  uint16_t stationaryTargetDistance();  
+  uint16_t movingTargetDistance();
 
-    // Internal variables to store radar data
-    bool presence;
-    uint16_t stationaryDistance;
-    uint16_t movingDistance;
-};
+private:
+  HardwareSerial &serial;
+  bool detectedTarget = false; 
+  uint16_t stationaryDistance = 0;  
+  uint16_t movingDistance = 0;      
 
-#endif // LD2412_H
+  static const int bufferSize = 16; 
+  bool debug = true;                 
+
+  void handleMessage(char *buffer);  
+  void handleTargetState(char targetState, char *buffer);
+
+#endif
