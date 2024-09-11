@@ -48,49 +48,42 @@ class RadarAccessory : public Service::OccupancySensor {
       occupancy = new Characteristic::OccupancyDetected(0, true);
     }
 
-    void loop() {
-        bool presence = false;
+void loop() {
+    bool presence = false;
 
-        #ifdef USE_LD2450
-        if (radar->read() > 0) {
-            bool anyTargetsDetected = false;
+    #ifdef USE_LD2450
+    if (radar->read() > 0) {
+        bool anyTargetsDetected = false;
 
-            for (uint16_t i = 0; i < radar->getSensorSupportedTargetCount(); i++) {
-                LD2450::RadarTarget target = radar->getTarget(i);
-                if (target.valid) {
-                    anyTargetsDetected = true;
+        for (uint16_t i = 0; i < radar->getSensorSupportedTargetCount(); i++) {
+            LD2450::RadarTarget target = radar->getTarget(i);
+            if (target.valid) {
+                anyTargetsDetected = true;
 
-                    if (target.distance >= minRange && target.distance <= maxRange) {
-                        presence = true;
-                        break;
-                    }
+                if (target.distance >= minRange && target.distance <= maxRange) {
+                    presence = true;
+                    break;
                 }
             }
-
-            if (!anyTargetsDetected) {
-                Serial.println("No targets detected.");
-            }
         }
 
-        #elif defined(USE_LD2412)
-        if (radar->presenceDetected()) {
-            if ((radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
-                (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
-                presence = true;
-            }
+        if (!anyTargetsDetected) {
+            Serial.println("No targets detected.");
         }
-
-        #else
-        if (radar->presenceDetected()) {
-            if ((radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
-                (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
-                presence = true;
-            }
-        }
-        #endif
-
-        occupancy->setVal(presence);
     }
+
+    #elif defined(USE_LD2410) || defined(USE_LD2412)
+    if (radar->presenceDetected()) {
+        if ((radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
+            (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
+            presence = true;
+        }
+    }
+
+    #endif
+
+    occupancy->setVal(presence);
+  }
 };
 
 #endif

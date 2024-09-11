@@ -5,15 +5,14 @@
 
 class LD2412 {
 public:
-  LD2412(HardwareSerial &serial);
-  void setup();
+  LD2412(HardwareSerial &serial);  // Constructor
+  void setup();  // Setup function for the sensor
   void configureSensor();
   void readData();
-
   bool presenceDetected();
   bool stationaryTargetDetected();
   bool movingTargetDetected();
-  uint16_t stationaryTargetDistance();  
+  uint16_t stationaryTargetDistance();
   uint16_t movingTargetDistance();
 
 private:
@@ -23,9 +22,10 @@ private:
   uint16_t movingDistance = 0;      
 
   static const int bufferSize = 16; 
-  bool debug = true;                 
+  bool debug = false;                
 
-  void handleMessage(char *buffer);  
+  void handleMessage(char *buffer);
   void handleTargetState(char targetState, char *buffer);
+};
 
 #endif

@@ -4,50 +4,45 @@
 LD2412::LD2412(HardwareSerial &serial) : serial(serial) {}
 
 void LD2412::setup() {
-  // The setup will no longer initialize the serial communication
-  // Serial initialization is done in main.ino
   Serial.println("LD2412 sensor initialized...");
 }
 
 void LD2412::configureSensor() {
-  // Add any necessary sensor configuration commands here
   Serial.println("LD2412 sensor configuration complete.");
 }
 
 void LD2412::readData() {
-  static char buffer[bufferSize];  // Buffer to hold the incoming message
+  static char buffer[bufferSize];  
   int bytesRead = 0;
 
-  // Read the full message from the sensor
   while (serial.available() && bytesRead < bufferSize) {
     buffer[bytesRead] = serial.read();
     bytesRead++;
   }
 
-  // If a full message is captured, process it
   if (bytesRead == bufferSize) {
     handleMessage(buffer);
   }
 }
 
 bool LD2412::presenceDetected() {
-  return detectedTarget;  // Return the detected target status
+  return detectedTarget;
 }
 
 bool LD2412::stationaryTargetDetected() {
-  return stationaryDistance > 0;  // Return true if a stationary target is detected
+  return stationaryDistance > 0;
 }
 
 bool LD2412::movingTargetDetected() {
-  return movingDistance > 0;  // Return true if a moving target is detected
+  return movingDistance > 0;
 }
 
 uint16_t LD2412::stationaryTargetDistance() {
-  return stationaryDistance;  // Return the stationary target distance
+  return stationaryDistance;
 }
 
 uint16_t LD2412::movingTargetDistance() {
-  return movingDistance;  // Return the moving target distance
+  return movingDistance;
 }
 
 void LD2412::handleMessage(char *buffer) {
@@ -60,7 +55,7 @@ void LD2412::handleMessage(char *buffer) {
     Serial.println();
   }
 
-  char targetState = buffer[8];  // The target state byte
+  char targetState = buffer[8];  
   handleTargetState(targetState, buffer);
 }
 
