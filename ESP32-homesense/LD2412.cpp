@@ -26,7 +26,8 @@ void LD2412::read() {
 }
 
 bool LD2412::presenceDetected() {
-  return detectedTarget;
+  // Presence detected if either distance is greater than 0
+  return stationaryDistance > 0 || movingDistance > 0;
 }
 
 bool LD2412::stationaryTargetDetected() {
@@ -62,7 +63,8 @@ void LD2412::handleMessage(char *buffer) {
 void LD2412::handleTargetState(char targetState, char *buffer) {
   if (targetState == 0x00) {
     Serial.println("Target State: No target");
-    detectedTarget = false;
+    stationaryDistance = 0;
+    movingDistance = 0;
     return;
   }
 
@@ -72,7 +74,6 @@ void LD2412::handleTargetState(char targetState, char *buffer) {
       Serial.print("Movement target detected. Distance: ");
       Serial.print(movingDistance);
       Serial.println(" cm");
-      detectedTarget = true;
     }
   }
 
@@ -82,10 +83,8 @@ void LD2412::handleTargetState(char targetState, char *buffer) {
       Serial.print("Stationary target detected. Distance: ");
       Serial.print(stationaryDistance);
       Serial.println(" cm");
-      detectedTarget = true;
     } else {
       Serial.println("No valid stationary target detected.");
-      detectedTarget = false;
     }
   }
 }

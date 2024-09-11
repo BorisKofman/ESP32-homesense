@@ -17,7 +17,6 @@ public:
 
 private:
   HardwareSerial &serial;
-  bool detectedTarget = false; 
   uint16_t stationaryDistance = 0;  
   uint16_t movingDistance = 0;      
 
