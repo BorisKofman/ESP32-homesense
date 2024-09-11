@@ -32,8 +32,7 @@ HardwareSerial radarSerial(1);  // Use Serial1 for the radar module
 
 // Define variables for radarSerial setup
 const int dataBits = SERIAL_8N1;
-const int rxPin = 44;
-const int txPin = 43;
+
 
 // Initialize radar with HardwareSerial reference
 RadarType radar(radarSerial);
@@ -41,6 +40,7 @@ RadarType radar(radarSerial);
 
 void setup() {
   Serial.begin(115200);
+
 
   homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
   homeSpan.begin(Category::Bridges, "HomeSense");
@@ -66,13 +66,29 @@ void setup() {
   Serial.println("LD2450 radar sensor initialized successfully.");
   #endif
 
+  #ifdef USE_LD2412
+  radar = RadarType(radarSerial); // Initialize radar with HardwareSerial reference
+  radar.begin(); // LD2412 might require a different method for initialization
+  if (radar.isInitialized()) {
+    Serial.println("LD2412 radar sensor initialized successfully.");
+  } else {
+    Serial.println("Failed to initialize LD2412 radar sensor.");
+    return;
+  }
+  #endif
+
+
+  new SpanAccessory();
+  new Service::AccessoryInformation();
+  new Characteristic::Identify();            
+
   // Add radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
     // Ensure RadarAccessory is defined or replace it with correct type
-    new RadarAccessory(&radar, 0, 350, 0);  // Provide pin
+    new RadarAccessory(&radar, 0, 350);  // Provide pin
 
   // Add radar sensor 2 
   new SpanAccessory();                                                          
@@ -80,15 +96,15 @@ void setup() {
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 2");
     // Ensure RadarAccessory is defined or replace it with correct type
-    new RadarAccessory(&radar, 350, 800, 1);  // Provide pin
+    new RadarAccessory(&radar, 350, 800);  // Provide pin
 
-  // Add a virtual switch
-  new SpanAccessory();
-    new Service::AccessoryInformation();
-      new Characteristic::Identify(); 
-      new Characteristic::Name("Virtual Switch 1");
-    // Ensure VirtualSwitch is defined or replace it with correct type
-    new VirtualSwitch();  
+  // // Add a virtual switch
+  // new SpanAccessory();
+  //   new Service::AccessoryInformation();
+  //     new Characteristic::Identify(); 
+  //     new Characteristic::Name("Virtual Switch 1");
+  //   // Ensure VirtualSwitch is defined or replace it with correct type
+  //   new VirtualSwitch();  
 }
 
 void loop() {

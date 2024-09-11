@@ -35,7 +35,7 @@ class RadarAccessory : public Service::OccupancySensor {
       #else
       ld2410 *radarSensor, 
       #endif
-      int pin, int minRange, int maxRange) 
+      int minRange, int maxRange) 
       : Service::OccupancySensor(), 
         minRange(minRange), maxRange(maxRange) {
       #ifdef USE_LD2450

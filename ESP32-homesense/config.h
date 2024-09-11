@@ -7,4 +7,7 @@
 // #define USE_LD2410
 #define USE_LD2412
 
+const int rxPin = 44;
+const int txPin = 43;
+
 #endif
