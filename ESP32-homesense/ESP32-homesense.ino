@@ -1,8 +1,6 @@
 #include "HomeSpan.h"
 #include "config.h"
 #include <HardwareSerial.h>
-#include "RadarAccessory.h"
-#include "VirtualSwitch.h"
 
 #ifdef USE_LD2410
 #include <ld2410.h>  
@@ -46,10 +44,21 @@ void setup() {
   radarSerial.begin(baudRate, dataBits, rxPin, txPin);
   delay(500);
 
-  // Initialize LD2412
-  radar.configureSensor(); // Custom method for any necessary configuration
-  Serial.println("LD2412 radar sensor initialized.");
+  #ifdef USE_LD2410
+  radar.begin(radarSerial);
+  if (radar.isInitialized()) {
+    Serial.println("LD2410 radar sensor initialized successfully.");
+  } else {
+    Serial.println("Failed to initialize LD2410 radar sensor.");
+    return; 
+  }
+  #endif
 
+  #ifdef USE_LD2450
+  radar.begin(radarSerial);
+  Serial.println("LD2450 radar sensor initialized successfully.");
+  #endif
+  
   // Add radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
