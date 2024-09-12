@@ -30,19 +30,15 @@ const int baudRate = 115200;  // Default baud rate for LD2412
 
 // Initialize variables
 unsigned long previousMillis = 0; 
-const long interval = 5000;  // Interval for 5 seconds for printing 
+const long interval = 5000; 
 
-// Declare hardware serial for radar communication
+const int dataBits = SERIAL_8N1;
+
 HardwareSerial radarSerial(1); 
 RadarType radar; 
 
-// Define variables for radarSerial setup
-const int dataBits = SERIAL_8N1;
 
-
-// Initialize radar with HardwareSerial reference
 RadarType radar(radarSerial);
-
 
 void setup() {
   Serial.begin(115200);
@@ -63,12 +59,7 @@ void setup() {
 
   #ifdef USE_LD2410
   radar.begin(radarSerial);
-  if (radar.isInitialized()) {
-    Serial.println("LD2410 radar sensor initialized successfully.");
-  } else {
-    Serial.println("Failed to initialize LD2410 radar sensor.");
-    return; 
-  }
+  Serial.println("LD2410 radar sensor initialized successfully.");
   #endif
 
   #ifdef USE_LD2412
