@@ -6,7 +6,7 @@
 class LD2412 {
 public:
   LD2412(HardwareSerial &serial);  // Constructor
-  void begin();  // Setup function for the sensor
+  void begin(HardwareSerial &serial);  // Setup function for the sensor
   void configureSensor();
   void read();
   bool presenceDetected();

@@ -11,18 +11,25 @@
 #include <ld2410.h>  
 typedef ld2410 RadarType;
 const int baudRate = 256000;
+HardwareSerial radarSerial(1); 
+RadarType radar; 
 #endif
 
 #ifdef USE_LD2450
 #include "LD2450.h" 
 typedef LD2450 RadarType;
 const int baudRate = 256000;
+HardwareSerial radarSerial(1); 
+RadarType radar; 
 #endif
 
 #ifdef USE_LD2412
 #include "LD2412.h"  
 typedef LD2412 RadarType;
 const int baudRate = 115200;  // Default baud rate for LD2412
+HardwareSerial radarSerial(1); 
+RadarType radar(radarSerial);  // Pass radarSerial to the LD2412 constructor
+
 #endif
 
 #include "RadarAccessory.h" 
@@ -33,12 +40,6 @@ unsigned long previousMillis = 0;
 const long interval = 5000; 
 
 const int dataBits = SERIAL_8N1;
-
-HardwareSerial radarSerial(1); 
-RadarType radar; 
-
-
-RadarType radar(radarSerial);
 
 void setup() {
   Serial.begin(115200);
@@ -63,7 +64,7 @@ void setup() {
   #endif
 
   #ifdef USE_LD2412
-  radar.begin();  // No parameter needed
+  radar.begin(radarSerial);  // Pass radarSerial to ensure proper communication
   Serial.println("LD2412 radar sensor initialized successfully.");
   #endif
 
