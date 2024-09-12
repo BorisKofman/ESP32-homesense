@@ -10,4 +10,7 @@
 const int rxPin = 44;
 const int txPin = 43;
 
+
+#define DEBUG = 1
+
 #endif

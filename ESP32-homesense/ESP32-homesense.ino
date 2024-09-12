@@ -35,9 +35,6 @@ RadarType radar(radarSerial);  // Pass radarSerial to the LD2412 constructor
 #include "RadarAccessory.h" 
 #include "VirtualSwitch.h"
 
-// Initialize variables
-unsigned long previousMillis = 0; 
-const long interval = 5000; 
 
 const int dataBits = SERIAL_8N1;
 
@@ -105,63 +102,5 @@ void setup() {
 
 void loop() {
   homeSpan.poll();
-  radar.read();  
-
-  unsigned long currentMillis = millis();
-
-  // Check if 5 seconds have passed
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis; 
-
-    Serial.println("Radar Data Report:");
-
-    #if defined(USE_LD2410) || defined(USE_LD2412)
-    if (radar.presenceDetected()) {
-      Serial.println("Presence detected!");
-
-      if (radar.stationaryTargetDetected()) {
-        Serial.print("Stationary target detected at ");
-        Serial.print(radar.stationaryTargetDistance());
-        Serial.print(" cm");
-      } else {
-        Serial.println("No stationary target detected.");
-      }
-
-      if (radar.movingTargetDetected()) {
-        Serial.print("Moving target detected at ");
-        Serial.print(radar.movingTargetDistance());
-        Serial.print(" cm");
-      } else {
-        Serial.println("No moving target detected.");
-      }
-    } else {
-      Serial.println("No presence detected.");
-    }
-    #endif
-
-    #ifdef USE_LD2450
-    bool presenceDetected = false;
-
-    // Iterate through all detected targets
-    for (int i = 0; i < radar.getSensorSupportedTargetCount(); ++i) {
-      auto target = radar.getTarget(i);
-      if (target.valid) {
-        presenceDetected = true;
-
-        Serial.print("Detected Target ID: ");
-        Serial.print(target.id);
-        Serial.print(", Distance: ");
-        Serial.print(target.distance);
-        Serial.print(" cm, Speed: ");
-        Serial.println(target.speed);
-      }
-    }
-
-    if (!presenceDetected) {
-      Serial.println("No presence detected.");
-    }
-    #endif
-
-    Serial.println("-----------------------------");
-  }
+  radar.read(); 
 }

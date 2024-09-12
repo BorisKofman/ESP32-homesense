@@ -27,7 +27,8 @@ void LD2412::read() {
 }
 
 bool LD2412::presenceDetected() {
-  return stationaryDistance > 0 || movingDistance > 0;
+  // Simply return true if there's either a moving or stationary target
+  return (movingDistance > 0) || (stationaryDistance > 0);
 }
 
 bool LD2412::stationaryTargetDetected() {
@@ -61,32 +62,35 @@ void LD2412::handleMessage(char *buffer) {
 }
 
 void LD2412::handleTargetState(char targetState, char *buffer) {
-  bool presenceDetected = false;
+  switch (targetState) {
+    case 0x00:
+      // No target detected
+      movingDistance = 0;
+      stationaryDistance = 0;
+      break;
 
-  // Handle moving target detection
-  if (targetState == 0x01 || targetState == 0x03) {
-    movingDistance = (buffer[9] & 0xFF) | ((buffer[10] & 0xFF) << 8);
-    if (movingDistance > 0) {
-      presenceDetected = true;
-      Serial.print("Movement target detected. Distance: ");
-      Serial.print(movingDistance);
-      Serial.println(" cm");
-    }
-  }
+    case 0x01:
+      // Moving target detected
+      movingDistance = (buffer[9] & 0xFF) | ((buffer[10] & 0xFF) << 8);
+      stationaryDistance = 0;
+      break;
 
-  // Handle stationary target detection
-  if (targetState == 0x02 || targetState == 0x03) {
-    stationaryDistance = (buffer[12] & 0xFF) | ((buffer[13] & 0xFF) << 8);
-    if (stationaryDistance > 0) {
-      presenceDetected = true;
-      Serial.print("Stationary target detected. Distance: ");
-      Serial.print(stationaryDistance);
-      Serial.println(" cm");
-    }
-  }
+    case 0x02:
+      // Stationary target detected
+      stationaryDistance = (buffer[12] & 0xFF) | ((buffer[13] & 0xFF) << 8);
+      movingDistance = 0;
+      break;
 
-  // If no presence is detected, print a message
-  if (!presenceDetected) {
-    Serial.println("No target detected.");
+    case 0x03:
+      // Both moving and stationary targets detected
+      movingDistance = (buffer[9] & 0xFF) | ((buffer[10] & 0xFF) << 8);
+      stationaryDistance = (buffer[12] & 0xFF) | ((buffer[13] & 0xFF) << 8);
+      break;
+
+    default:
+      // Unknown state, reset distances
+      movingDistance = 0;
+      stationaryDistance = 0;
+      break;
   }
 }
