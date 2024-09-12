@@ -68,15 +68,16 @@ void setup() {
   }
   #endif
 
+  #ifdef USE_LD2412
+  radar.begin();  // No parameter needed
+  Serial.println("LD2412 radar sensor initialized successfully.");
+  #endif
+
   #ifdef USE_LD2450
   radar.begin(radarSerial);
   Serial.println("LD2450 radar sensor initialized successfully.");
   #endif
 
-  #ifdef USE_LD2412
-  radar.begin();  // No parameter needed
-  Serial.println("LD2412 radar sensor initialized successfully.");
-  #endif
 
   new SpanAccessory();
   new Service::AccessoryInformation();
