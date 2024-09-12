@@ -1,41 +1,56 @@
 #include "HomeSpan.h"
+#include "config.h"
 #include <HardwareSerial.h>
 
-#define USE_LD2450 //Replace with Desired human presence sensor currently supported 2450,2410 
 
+#include <esp_bt.h>
+#include <esp_bt_main.h>
+
+// Ensure proper radar initialization based on the sensor type
 #ifdef USE_LD2410
 #include <ld2410.h>  
 typedef ld2410 RadarType;
+const int baudRate = 256000;
+HardwareSerial radarSerial(1); 
+RadarType radar; 
 #endif
 
 #ifdef USE_LD2450
 #include "LD2450.h" 
-typedef LD2450 RadarType; 
+typedef LD2450 RadarType;
+const int baudRate = 256000;
+HardwareSerial radarSerial(1); 
+RadarType radar; 
+#endif
+
+#ifdef USE_LD2412
+#include "LD2412.h"  
+typedef LD2412 RadarType;
+const int baudRate = 115200;  // Default baud rate for LD2412
+HardwareSerial radarSerial(1); 
+RadarType radar(radarSerial);  // Pass radarSerial to the LD2412 constructor
+
 #endif
 
 #include "RadarAccessory.h" 
 #include "VirtualSwitch.h"
 
-#define STATUS_LED_PIN 48  // Pin for status LED
-
-HardwareSerial radarSerial(1); 
-RadarType radar; 
-
+// Initialize variables
 unsigned long previousMillis = 0; 
-const long interval = 5000;  // Interval for 5 seconds  only for printing 
+const long interval = 5000; 
 
-// Define variables for radarSerial setup
-const int baudRate = 256000;
 const int dataBits = SERIAL_8N1;
-
-const int rxPin = 43;
-const int txPin = 44;
 
 void setup() {
   Serial.begin(115200);
 
+  // Disable Bluetooth to save power
+  btStop();
+  esp_bt_controller_disable();
+
   homeSpan.setStatusPixel(STATUS_LED_PIN, 240, 100, 5);
-  homeSpan.begin(Category::Bridges, "HomeSense Bridge");
+  homeSpan.setStatusAutoOff(5);
+  homeSpan.begin(Category::Bridges, "HomeSense");
   homeSpan.enableWebLog(10, "pool.ntp.org", "UTC+3");
   homeSpan.setApTimeout(300);
   homeSpan.enableAutoStartAP();
@@ -45,12 +60,12 @@ void setup() {
 
   #ifdef USE_LD2410
   radar.begin(radarSerial);
-  if (radar.isInitialized()) {
-    Serial.println("LD2410 radar sensor initialized successfully.");
-  } else {
-    Serial.println("Failed to initialize LD2410 radar sensor.");
-    return; 
-  }
+  Serial.println("LD2410 radar sensor initialized successfully.");
+  #endif
+
+  #ifdef USE_LD2412
+  radar.begin(radarSerial);  // Pass radarSerial to ensure proper communication
+  Serial.println("LD2412 radar sensor initialized successfully.");
   #endif
 
   #ifdef USE_LD2450
@@ -58,36 +73,40 @@ void setup() {
   Serial.println("LD2450 radar sensor initialized successfully.");
   #endif
 
-    new SpanAccessory();
-    new Service::AccessoryInformation();
-    new Characteristic::Identify();            
 
-  // Example Add a radar sensor 1 
+  new SpanAccessory();
+  new Service::AccessoryInformation();
+  new Characteristic::Identify();            
+
+  // Add radar sensor 1 
   new SpanAccessory();                                                          
     new Service::AccessoryInformation();
       new Characteristic::Identify(); 
       new Characteristic::Name("Radar Sensor 1");
-    new RadarAccessory(&radar, 0, 250); 
+    // Ensure RadarAccessory is defined or replace it with correct type
+    new RadarAccessory(&radar, 0, 1100);  // Provide pin
 
-  // Example Add a radar sensor 2 
-  new SpanAccessory();                                                          
-    new Service::AccessoryInformation();
-      new Characteristic::Identify(); 
-      new Characteristic::Name("Radar Sensor 2");
-    new RadarAccessory(&radar, 250, 800); 
+  // // Add radar sensor 2 
+  // new SpanAccessory();                                                          
+  //   new Service::AccessoryInformation();
+  //     new Characteristic::Identify(); 
+  //     new Characteristic::Name("Radar Sensor 2");
+  //   // Ensure RadarAccessory is defined or replace it with correct type
+  //   new RadarAccessory(&radar, 350, 800);  // Provide pin
 
-  // // Example Add a virtual switch
+  // // Add a virtual switch
   // new SpanAccessory();
   //   new Service::AccessoryInformation();
   //     new Characteristic::Identify(); 
   //     new Characteristic::Name("Virtual Switch 1");
+  //   // Ensure VirtualSwitch is defined or replace it with correct type
   //   new VirtualSwitch();  
 }
 
 void loop() {
   homeSpan.poll();
   radar.read();  
-  
+
   unsigned long currentMillis = millis();
 
   // Check if 5 seconds have passed
@@ -96,15 +115,14 @@ void loop() {
 
     Serial.println("Radar Data Report:");
 
-    #ifdef USE_LD2410
+    #if defined(USE_LD2410) || defined(USE_LD2412)
     if (radar.presenceDetected()) {
       Serial.println("Presence detected!");
 
       if (radar.stationaryTargetDetected()) {
         Serial.print("Stationary target detected at ");
         Serial.print(radar.stationaryTargetDistance());
-        Serial.print(" cm, energy level: ");
-        Serial.println(radar.stationaryTargetEnergy());
+        Serial.print(" cm");
       } else {
         Serial.println("No stationary target detected.");
       }
@@ -112,8 +130,7 @@ void loop() {
       if (radar.movingTargetDetected()) {
         Serial.print("Moving target detected at ");
         Serial.print(radar.movingTargetDistance());
-        Serial.print(" cm, energy level: ");
-        Serial.println(radar.movingTargetEnergy());
+        Serial.print(" cm");
       } else {
         Serial.println("No moving target detected.");
       }
@@ -144,6 +161,7 @@ void loop() {
       Serial.println("No presence detected.");
     }
     #endif
+
     Serial.println("-----------------------------");
   }
 }

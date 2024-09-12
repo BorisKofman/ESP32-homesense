@@ -3,6 +3,8 @@
 
 #ifdef USE_LD2450
 #include "LD2450.h" 
+#elif defined(USE_LD2412)
+#include "LD2412.h"
 #else
 #include <ld2410.h>
 #endif
@@ -15,12 +17,12 @@ class RadarAccessory : public Service::OccupancySensor {
     
     #ifdef USE_LD2450
     LD2450 *radar;  
+    #elif defined(USE_LD2412)
+    LD2412 *radar;
     #else
     ld2410 *radar;
     #endif
 
-    uint32_t lastCheckTime = 0;
-    const uint32_t checkInterval = 2000;  // 2 seconds
     int minRange;
     int maxRange;
 
@@ -28,6 +30,8 @@ class RadarAccessory : public Service::OccupancySensor {
     RadarAccessory(
       #ifdef USE_LD2450
       LD2450 *radarSensor, 
+      #elif defined(USE_LD2412)
+      LD2412 *radarSensor, 
       #else
       ld2410 *radarSensor, 
       #endif
@@ -36,52 +40,50 @@ class RadarAccessory : public Service::OccupancySensor {
         minRange(minRange), maxRange(maxRange) {
       #ifdef USE_LD2450
       radar = radarSensor;
+      #elif defined(USE_LD2412)
+      radar = radarSensor;
       #else
       radar = radarSensor;
       #endif
       occupancy = new Characteristic::OccupancyDetected(0, true);
     }
 
-    void loop() {
-      uint32_t currentTime = millis();
-      if (currentTime - lastCheckTime >= checkInterval) {
-          lastCheckTime = currentTime;
+void loop() {
+    bool presence = false;
 
-          bool presence = false;
+    #ifdef USE_LD2450
+    if (radar->read() > 0) {
+        bool anyTargetsDetected = false;
 
-          #ifdef USE_LD2450
-          if (radar->read() > 0) {
-              bool anyTargetsDetected = false;
+        for (uint16_t i = 0; i < radar->getSensorSupportedTargetCount(); i++) {
+            LD2450::RadarTarget target = radar->getTarget(i);
+            if (target.valid) {
+                anyTargetsDetected = true;
 
-              for (uint16_t i = 0; i < radar->getSensorSupportedTargetCount(); i++) {
-                  LD2450::RadarTarget target = radar->getTarget(i);
-                  if (target.valid) {
-                      anyTargetsDetected = true;
+                if (target.distance >= minRange && target.distance <= maxRange) {
+                    presence = true;
+                    break;
+                }
+            }
+        }
 
-                      if (target.distance >= minRange && target.distance <= maxRange) {
-                          presence = true;
-                          break;
-                      }
-                  }
-              }
-
-              if (!anyTargetsDetected) {
-                  Serial.println("No targets detected.");
-              }
-          }
-
-          #else
-          if (radar->presenceDetected()) {
-              if ((radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
-                  (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
-                  presence = true;
-              }
-          }
-          #endif
-
-          occupancy->setVal(presence);
-      }
+        if (!anyTargetsDetected) {
+            Serial.println("No targets detected.");
+        }
     }
+
+    #elif defined(USE_LD2410) || defined(USE_LD2412)
+    if (radar->presenceDetected()) {
+        if ((radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
+            (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
+            presence = true;
+        }
+    }
+
+    #endif
+
+    occupancy->setVal(presence);
+  }
 };
 
 #endif
