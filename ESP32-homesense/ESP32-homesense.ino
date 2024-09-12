@@ -1,8 +1,7 @@
 #include "HomeSpan.h"
 #include "config.h"
 #include <HardwareSerial.h>
-#include "RadarAccessory.h" 
-#include "VirtualSwitch.h"
+
 
 #include <esp_bt.h>
 #include <esp_bt_main.h>
@@ -26,12 +25,16 @@ typedef LD2412 RadarType;
 const int baudRate = 115200;  // Default baud rate for LD2412
 #endif
 
+#include "RadarAccessory.h" 
+#include "VirtualSwitch.h"
+
 // Initialize variables
 unsigned long previousMillis = 0; 
 const long interval = 5000;  // Interval for 5 seconds for printing 
 
 // Declare hardware serial for radar communication
-HardwareSerial radarSerial(1);  // Use Serial1 for the radar module
+HardwareSerial radarSerial(1); 
+RadarType radar; 
 
 // Define variables for radarSerial setup
 const int dataBits = SERIAL_8N1;
