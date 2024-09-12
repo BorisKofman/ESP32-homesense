@@ -25,6 +25,9 @@ class RadarAccessory : public Service::OccupancySensor {
 
     int minRange;
     int maxRange;
+    // Initialize variables
+    unsigned long previousMillis = 0; 
+    const long interval = 1000; 
 
   public:
     RadarAccessory(
@@ -51,7 +54,13 @@ class RadarAccessory : public Service::OccupancySensor {
 void loop() {
     bool presence = false;
 
-    #ifdef USE_LD2450
+    unsigned long currentMillis = millis();
+
+    // Check if 5 seconds have passed
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis; 
+      
+#ifdef USE_LD2450
     if (radar->read() > 0) {
         bool anyTargetsDetected = false;
 
@@ -71,18 +80,44 @@ void loop() {
             Serial.println("No targets detected.");
         }
     }
-
-    #elif defined(USE_LD2410) || defined(USE_LD2412)
+#elif defined(USE_LD2410) || defined(USE_LD2412)
     if (radar->presenceDetected()) {
-        if ((radar->stationaryTargetDistance() >= minRange && radar->stationaryTargetDistance() <= maxRange) || 
-            (radar->movingTargetDistance() >= minRange && radar->movingTargetDistance() <= maxRange)) {
+
+      #ifdef DEBUG
+        Serial.println("Presence detected.");
+      #endif
+
+        int stationaryDist = radar->stationaryTargetDistance();
+        int movingDist = radar->movingTargetDistance();
+
+      #ifdef DEBUG
+        // Print the stationary and moving target distances
+        Serial.print("Stationary target distance: ");
+        Serial.println(stationaryDist);
+
+        Serial.print("Moving target distance: ");
+        Serial.println(movingDist);
+      #endif
+
+        if ((stationaryDist >= minRange && stationaryDist <= maxRange) || 
+            (movingDist >= minRange && movingDist <= maxRange)) {
             presence = true;
+          #ifdef DEBUG
+            Serial.println("Presence within range.");
+          #endif
+        } else {
+          #ifdef DEBUG
+            Serial.println("Presence detected but out of range.");
+          #endif
         }
+    } else {
+      #ifdef DEBUG
+        Serial.println("No presence detected.");
+      #endif
     }
-
-    #endif
-
-    occupancy->setVal(presence);
+#endif
+      occupancy->setVal(presence);
+    }
   }
 };
 

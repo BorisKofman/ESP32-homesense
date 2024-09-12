@@ -15,10 +15,12 @@ public:
   uint16_t stationaryTargetDistance();
   uint16_t movingTargetDistance();
 
+
 private:
   HardwareSerial &serial;
-  uint16_t stationaryDistance = 0;  
-  uint16_t movingDistance = 0;      
+  
+  int movingDistance;
+  int stationaryDistance;
 
   static const int bufferSize = 16; 
   bool debug = false;                
