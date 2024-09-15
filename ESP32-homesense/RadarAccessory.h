@@ -1,6 +1,9 @@
 #ifndef RADAR_ACCESSORY_H
 #define RADAR_ACCESSORY_H
 
+#include "Config.h" 
+
+
 #ifdef USE_LD2450
 #include "LD2450.h" 
 #elif defined(USE_LD2412)
@@ -17,25 +20,29 @@ class RadarAccessory : public Service::OccupancySensor {
     
     #ifdef USE_LD2450
     LD2450 *radar;  
-    #elif defined(USE_LD2412)
+    #endif
+    #ifdef USE_LD2412
     LD2412 *radar;
-    #else
+    #endif
+    #ifdef USE_LD2410
     ld2410 *radar;
     #endif
 
     int minRange;
     int maxRange;
-    // Initialize variables
+    bool presence = false;
     unsigned long previousMillis = 0; 
     const long interval = 1000; 
 
   public:
     RadarAccessory(
       #ifdef USE_LD2450
-      LD2450 *radarSensor, 
-      #elif defined(USE_LD2412)
+      LD2450 *radarSensor,
+      #endif 
+      #ifdef USE_LD2412
       LD2412 *radarSensor, 
-      #else
+      #endif
+      #ifdef USE_LD2410
       ld2410 *radarSensor, 
       #endif
       int minRange, int maxRange) 
@@ -43,20 +50,19 @@ class RadarAccessory : public Service::OccupancySensor {
         minRange(minRange), maxRange(maxRange) {
       #ifdef USE_LD2450
       radar = radarSensor;
-      #elif defined(USE_LD2412)
+      #endif
+      #ifdef USE_LD2412
       radar = radarSensor;
-      #else
+      #endif
+      #ifdef USE_LD2410
       radar = radarSensor;
       #endif
       occupancy = new Characteristic::OccupancyDetected(0, true);
     }
 
 void loop() {
-    bool presence = false;
-
     unsigned long currentMillis = millis();
 
-    // Check if 5 seconds have passed
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis; 
       
@@ -80,6 +86,7 @@ void loop() {
             Serial.println("No targets detected.");
         }
     }
+
 #elif defined(USE_LD2410) || defined(USE_LD2412)
     if (radar->presenceDetected()) {
 
@@ -87,36 +94,48 @@ void loop() {
         Serial.println("Presence detected.");
       #endif
 
+      // Custom condition when "DISTANCE" is not defined
+      #ifndef DISTANCE
+        presence = true;  // Skip range checks, just set presence to true
+        #ifdef DEBUG
+          Serial.println("Presence detected, no range checking.");
+        #endif
+      #else
+        // If "DISTANCE" is defined, use the range checking logic
         int stationaryDist = radar->stationaryTargetDistance();
         int movingDist = radar->movingTargetDistance();
 
-      #ifdef DEBUG
-        // Print the stationary and moving target distances
-        Serial.print("Stationary target distance: ");
-        Serial.println(stationaryDist);
+        #ifdef DEBUG
+          Serial.print("Stationary target distance: ");
+          Serial.println(stationaryDist);
 
-        Serial.print("Moving target distance: ");
-        Serial.println(movingDist);
-      #endif
+          Serial.print("Moving target distance: ");
+          Serial.println(movingDist);
+        #endif
 
+        // Perform the range checks when DISTANCE is defined
         if ((stationaryDist >= minRange && stationaryDist <= maxRange) || 
             (movingDist >= minRange && movingDist <= maxRange)) {
             presence = true;
-          #ifdef DEBUG
-            Serial.println("Presence within range.");
-          #endif
+            #ifdef DEBUG
+              Serial.println("Presence within range.");
+            #endif
         } else {
-          #ifdef DEBUG
-            Serial.println("Presence detected but out of range.");
-          #endif
+            #ifdef DEBUG
+              Serial.println("Presence detected but out of range.");
+            #endif
         }
+      #endif  // End of DISTANCE check
+
     } else {
       #ifdef DEBUG
         Serial.println("No presence detected.");
+        presence = false;
       #endif
     }
 #endif
-      occupancy->setVal(presence);
+      // Set occupancy value based on the presence
+    occupancy->setVal(presence);
     }
   }
 };
